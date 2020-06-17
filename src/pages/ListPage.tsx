@@ -13,7 +13,7 @@ type Props = {
 
 const TshirtListPage: React.FC<Props> = ({ tshirts, className }) => (
   <div className={className}>
-    {tshirts.map((tshirt) => (
+    {tshirts?.map((tshirt) => (
       <Link to="Detail" state={{tshirt}} >
         <div className="tshirt-card-container" key={tshirt.img_main}>
           <img className="tshirt-card-image" src={tshirt.img_main} alt={tshirt.name} />
