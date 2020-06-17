@@ -19,8 +19,12 @@ export default styled(Header)`
   display: flex;
   justify-content: flex-end;
   margin-right: 5px;
+  width: 100%;
+  height: 50px;
 
   a.shopping-cart-link {
+    align-self: center;
+    padding-right: 5px;
     position: fixed;
     z-index: 100;
     color: black;

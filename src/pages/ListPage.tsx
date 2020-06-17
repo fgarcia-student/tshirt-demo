@@ -65,6 +65,6 @@ export default styled(TshirtListPage)`
 
   .tshirt-card-container:hover >
   .tshirt-card-image {
-    transform: scale(1.2);
+    transform: scale(1.1);
   }
 `;
