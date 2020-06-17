@@ -68,7 +68,7 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
                 <option key={size} value={size}>{size}</option>
               ))}
             </select>
-            <button disabled={tshirt.quantity === 0} onClick={() => alert("Added to cart")}>Add to cart</button>
+            <button disabled={tshirt.quantity === 0} onClick={() => alert("Coming soon!")}>Add to cart</button>
           </div>
           <Link to="/">Go Back</Link>
         </div>
