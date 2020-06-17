@@ -12,7 +12,7 @@ type LocationState = {
 type Props = PageProps<{}, {}, LocationState>;
 
 const TshirtDetailPage: React.FC<Props> = (props) => {
-  const { tshirt } = props.location.state;
+  const tshirt = props.location.state?.tshirt;
   return (
     <Layout>
       <div
