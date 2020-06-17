@@ -29,7 +29,7 @@ export default styled(Logo)`
   mix-blend-mode: difference;
 
   img {
-    width: 150px;
+    width: 300px;
     transition: transform 0.2s ease-in;
     cursor: pointer;
     &:hover {

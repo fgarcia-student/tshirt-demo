@@ -28,7 +28,7 @@ const TshirtListPage: React.FC<Props> = ({ tshirts, className }) => (
 export default styled(TshirtListPage)`
   padding-top: 50px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   grid-template-rows: repeat(3, 1fr);
   grid-column-gap: 20px;
   grid-row-gap: 20px;
