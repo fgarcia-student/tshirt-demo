@@ -7,7 +7,7 @@ import { Link } from "gatsby"
 import { Tshirt } from '../models/Tshirt';
 
 type Props = {
-  tshirts: Tshirt[];
+  tshirts?: Tshirt[];
   className?: string;
 }
 

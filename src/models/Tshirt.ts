@@ -1,5 +1,5 @@
 export class Tshirt {
-  constructor(data) {
+  constructor(data: Partial<Tshirt>) {
     this.id = data?.id ?? 0;
     this.name = data?.name ?? "";
     this.price = data?.price ?? "";
