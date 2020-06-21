@@ -139,7 +139,7 @@ export default styled(TshirtDetailPage)`
     }
   }
   
-  @media screen and (max-width: 750px) {
+  @media screen and (max-width: 912px) {
     flex-direction: column;
 
     .sold-out-label {
