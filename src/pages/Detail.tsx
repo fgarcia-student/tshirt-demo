@@ -1,8 +1,10 @@
 import React from "react";
-import { PageProps, Link } from 'gatsby';
+import { PageProps, Link, navigate } from 'gatsby';
 import { Tshirt } from '../models/Tshirt';
 import styled from "styled-components";
 import Layout from "../components/layout"
+import { addItemToShoppingCart } from "../components/header";
+import { ItemCategory } from '../enums/ItemCategory';
 
 
 type LocationState = {
@@ -14,11 +16,16 @@ type StyledProps = { className?: string }
 type Props = StyledProps & PageProps<{}, {}, LocationState>;
 
 const TshirtDetailPage: React.FC<Props> = (props) => {
+  const [, refresh] = React.useState(false);
+
   const tshirt = props.location.state?.tshirt ?? new Tshirt({});
   
   const [activeImage, setActiveImage] = React.useState(tshirt.img_main ?? "");
-  const handleSetActiveImage = React.useCallback((url: string) => () => { setActiveImage(url); }, [])
+  const handleSetActiveImage = React.useCallback((url: string) => () => { setActiveImage(url); }, []);
   
+  const [selectedSize, setSelectedSize] = React.useState(tshirt.quantity === 0 ? "SOLD_OUT" : tshirt.sizes[0] ?? "");
+  const handleSetSelectedSize = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSize(e.currentTarget.value), []);
+
   const [backgroundPosition, setBackgroundPosition] = React.useState("0% 0%");
   const handleSetBackgroundPosition = React.useCallback((e: React.MouseEvent) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -30,6 +37,13 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
   const [isHovering, setIsHovering] = React.useState(false);
   const handleStartHovering = React.useCallback(() => setIsHovering(true), []);
   const handleStopHovering = React.useCallback(() => setIsHovering(false), []);
+
+  const handleAddItemToCart = React.useCallback(() => {
+    if (selectedSize !== "SOLD_OUT") {
+      addItemToShoppingCart(ItemCategory.tshirt, tshirt, selectedSize);
+      refresh(t => !t);
+    }
+  }, [tshirt, selectedSize]);
 
   return (
     <Layout>
@@ -73,7 +87,7 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
           }}
         >
           <div style={{ fontSize: "48px", paddingBottom: "20px", lineHeight: "60px" }}>{tshirt.name}</div>
-          <div style={{ fontSize: "32px", paddingBottom: "20px"  }}>{tshirt.price}</div>
+          <div style={{ fontSize: "32px", paddingBottom: "20px"  }}>{tshirt.formatted_price}</div>
           <div style={{ fontSize: "18px", paddingBottom: "20px" }}>{tshirt.description}</div>
           <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             {tshirt.quantity === 0 && (
@@ -81,7 +95,7 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
                 SOLD OUT
               </div>
             )}
-            <select>
+            <select className="size_selection_dropdown" onChange={handleSetSelectedSize}>
               {tshirt.quantity === 0 && (
                 <option key={"SOLD OUT"} value={"SOLD OUT"}>SOLD OUT</option>
               )}
@@ -89,9 +103,15 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
                 <option key={size} value={size}>{size}</option>
               ))}
             </select>
-            <button disabled={tshirt.quantity === 0} onClick={() => alert("Coming soon!")}>Add to cart</button>
+            <button className={`add_to_cart_button ${tshirt.quantity === 0 ? "disabled" : ""}`} disabled={tshirt.quantity === 0} onClick={handleAddItemToCart}>Add to cart</button>
           </div>
-          <Link to="/">Go Back</Link>
+          <div 
+            className="go_back_button"
+            onClick={() => window.history.back()}
+          >
+            <i className="material-icons">arrow_back</i>
+            <span>Go Back</span>
+          </div>
         </div>
       </div>
     </Layout>
@@ -100,6 +120,59 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
 
 export default styled(TshirtDetailPage)`
   flex-direction: row;
+
+  .go_back_button {
+    display: flex;
+    padding-left: 0px;
+    margin-top: 5px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid black;
+    transition: all 0.2s ease-in;
+
+    &:hover {
+      background-color: #a1a1a1;
+      color: white;
+    }
+  }
+
+  .add_to_cart_button {
+    border: 1px solid black;
+    background-color: white;
+    margin-top: 5px;
+    transition: all 0.2s ease-in;
+    cursor: pointer;
+
+    &:hover {
+      background-color: darkgreen;
+      color: white;
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &.disabled {
+      cursor: not-allowed;
+
+      &:hover {
+        background-color: white;
+        color: grey;
+      }
+    }
+  }
+
+  .size_selection_dropdown {
+    border: 1px solid black;
+    background-color: white;
+    margin-top: 5px;
+
+    &:focus {
+      outline: none;
+    }
+  }
+
   .sold-out-label {
     color: red;
     position: absolute;

@@ -11,19 +11,22 @@ type Props = {
   className?: string;
 }
 
-const TshirtListPage: React.FC<Props> = ({ tshirts, className }) => (
-  <div className={className}>
-    {tshirts?.map((tshirt) => (
-      <Link to="Detail" state={{tshirt}} >
-        <div className="tshirt-card-container" key={tshirt.img_main}>
-          <img className="tshirt-card-image" src={tshirt.img_main} alt={tshirt.name} />
-          <div className="tshirt-card-title">{tshirt.name}</div>
-          <div className="tshirt-card-price">{tshirt.price}</div>
-        </div>
-      </Link>
-    ))}
-  </div>
-)
+const TshirtListPage: React.FC<Props> = ({ tshirts, className }) => {
+
+  return (
+    <div className={className}>
+      {tshirts?.map((tshirt) => (
+        <Link id={`${tshirt.id}`} key={tshirt.id} to={`/Detail?id=${tshirt.id}`} state={{tshirt}} >
+          <div className="tshirt-card-container" key={tshirt.img_main}>
+            <img className="tshirt-card-image" src={tshirt.img_main} alt={tshirt.name} />
+            <div className="tshirt-card-title">{tshirt.name}</div>
+            <div className="tshirt-card-price">{tshirt.formatted_price}</div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default styled(TshirtListPage)`
   padding-top: 50px;
