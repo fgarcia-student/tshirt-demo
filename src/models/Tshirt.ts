@@ -1,22 +1,24 @@
+type PriceBySizeDictionary = {[key: string]: number};
+
 export class Tshirt {
   constructor(data: Partial<Tshirt>) {
-    this.id = data?.id ?? 0;
+    this.id = data?.id ?? "0";
     this.name = data?.name ?? "";
-    this.formatted_price = data?.formatted_price ?? "";
+    this.formattedPrice = data?.formattedPrice ?? "{price} USD";
     this.price = data?.price ?? 0;
-    this.img_main = data?.img_main ?? "";
-    this.img_alt = data?.img_alt ?? [];
+    this.imgMain = data?.imgMain ?? "";
+    this.imgAlt = data?.imgAlt ?? [];
     this.description = data?.description ?? "";
     this.sizes = data?.sizes ?? [];
-    this.quantity = data?.quantity ?? 0;
+    this.priceBySize = data?.priceBySize ?? {};
   }
-  public id: number;
+  public id: string;
   public name: string;
-  public formatted_price: string;
+  public formattedPrice: string;
   public price: number;
-  public img_main: string;
-  public img_alt: string[];
+  public imgMain: string;
+  public imgAlt: string[];
   public description: string;
   public sizes: string[];
-  public quantity: number
+  public priceBySize: PriceBySizeDictionary;
 }

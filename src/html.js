@@ -11,6 +11,7 @@ export default function HTML(props) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
+        <script type="text/javascript" src="https://js.squareupsandbox.com/v2/paymentform"></script>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons"rel="stylesheet"></link>
         {props.headComponents}
       </head>

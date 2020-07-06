@@ -1,8 +1,8 @@
 import { Tshirt } from '../models/Tshirt';
 import React from 'react';
 import styled from 'styled-components';
-import { updateItemQuantity, removeItemFromShoppingCart, addItemToShoppingCart } from './header';
-import { ItemCategory } from '../enums/ItemCategory';
+import { AppEntities } from '../enums/AppEntities';
+import { IAppContext, AppContext } from '../state/store';
 
 interface ShoppingCartItem<T> {
   item: T;
@@ -12,25 +12,25 @@ interface ShoppingCartItem<T> {
 }
 
 interface ShoppingCart {
-  [ItemCategory.tshirt]: {
-    [id: number]: ShoppingCartItem<Tshirt>;
+  [AppEntities.tshirt]: {
+    [id: string]: ShoppingCartItem<Tshirt>;
   }
 }
 
 type Props = {
   shoppingCart: ShoppingCart;
   shoppingCartCount: number;
+  updateCartItemQuantity: IAppContext["updateCartItemQuantity"];
+  removeItemFromCart: IAppContext["removeItemFromCart"];
   className?: string;
 }
 
 const ShoppingCart: React.FC<Props> = (props) => {
 
-  const [, refresh] = React.useState(false);
-
   const handleUpdateItemAndSizeQuantity = React.useCallback((category: string, tshirt: Tshirt, size: string) => () => {
     const inputEl = document.getElementById(`item_quantity_${tshirt.id}-${size}`) as HTMLInputElement;
     if (inputEl) {
-      updateItemQuantity(category, tshirt, size, inputEl.value);
+      props.updateCartItemQuantity?.(category, tshirt, size, +inputEl.value);
       const updateButton = document.getElementById(`item_quantity_update_${tshirt.id}-${size}`) as HTMLButtonElement;
       if (updateButton) {
         const currentText = updateButton.innerHTML;
@@ -41,71 +41,84 @@ const ShoppingCart: React.FC<Props> = (props) => {
         updateButton.appendChild(successfulUpdateIcon);
         setTimeout(() => updateButton.innerHTML = currentText, 500);
       }
-      refresh(t => !t);
     }
-  }, []);
+  }, [props.updateCartItemQuantity]);
 
   const handleRemoveItem = React.useCallback((category: string, tshirt: Tshirt, size: string) => () => {
-    removeItemFromShoppingCart(category, tshirt, size);
-    refresh(t => !t);
-  }, []);
+    props.removeItemFromCart?.(category, tshirt, size);
+  }, [props.removeItemFromCart]);
 
   const cartItems = () => {
-    const tshirts = Object
+    const totalCartItems: any[] = [];
+    if (props.shoppingCart.tshirt) {
+      const tshirts = Object
       .keys(props.shoppingCart.tshirt)
-      .map((tshirtId) => props.shoppingCart.tshirt[tshirtId])
+      .map((tshirtId) => props.shoppingCart.tshirt![tshirtId])
       .map((item?: ShoppingCartItem<Tshirt>) => {
         if (item) {
           return Object
             .keys(item.cartDetails)
             .sort((a, b) => a.localeCompare(b))
-            .map((size) => (
-              <div key={`tshirt_${item.item.id}-${size}`} className="shopping_cart_item">
-                <img className="shopping_cart_item__image" src={item.item.img_main} />
-                <div className="shopping_cart_item__details">
-                  <span className="shopping_cart_item__details__name">{item.item.name}</span>
-                  <span className="shopping_cart_item__details__price">{item.item.formatted_price}</span>
-                  <span className="shopping_cart_item__details__size">Size: {size}</span>
+            .map((size) => {
+              const price = item.item.priceBySize[size] ?? item.item.price;
+              const formattedPrice = item.item.formattedPrice.replace("{price}", `${price}`);
+              return (
+                <div key={`tshirt_${item.item.id}-${size}`} className="shopping_cart_item">
+                  <img className="shopping_cart_item__image" src={item.item.imgMain} />
+                  <div className="shopping_cart_item__details">
+                    <span className="shopping_cart_item__details__name">{item.item.name}</span>
+                    <span className="shopping_cart_item__details__price">{formattedPrice}</span>
+                    <span className="shopping_cart_item__details__size">Size: {size}</span>
+                  </div>
+                  <div className="shopping_cart_item__actions">
+                    <input
+                      id={`item_quantity_${item.item.id}-${size}`}
+                      className="shopping_cart_item__actions__quantity"
+                      defaultValue={item.cartDetails[size]}
+                      type="number"
+                    />
+                    <button id={`item_quantity_update_${item.item.id}-${size}`} className="update" onClick={handleUpdateItemAndSizeQuantity(AppEntities.tshirt, item.item, size)}>Update quantity</button>
+                    <button id={`item_remove_${item.item.id}-${size}`} className="remove" onClick={handleRemoveItem(AppEntities.tshirt, item.item, size)}>Remove item</button>
+                  </div>
                 </div>
-                <div className="shopping_cart_item__actions">
-                  <input
-                    id={`item_quantity_${item.item.id}-${size}`}
-                    className="shopping_cart_item__actions__quantity"
-                    defaultValue={item.cartDetails[size]}
-                    type="number"
-                  />
-                  <button id={`item_quantity_update_${item.item.id}-${size}`} className="update" onClick={handleUpdateItemAndSizeQuantity(ItemCategory.tshirt, item.item, size)}>Update quantity</button>
-                  <button id={`item_remove_${item.item.id}-${size}`} className="remove" onClick={handleRemoveItem(ItemCategory.tshirt, item.item, size)}>Remove item</button>
-                </div>
-              </div>
-            ))
+              );
+            })
         }
         return <></>;
       })
-    return tshirts;
+
+      totalCartItems.push(...tshirts);
+    }
+    
+    return totalCartItems;
   };
 
   const calculateTotalCost = () => {
-    const tshirts: number = Object
-      .keys(props.shoppingCart.tshirt)
-      .map((tshirtId) => props.shoppingCart.tshirt[tshirtId])
-      .reduce((total: number, item?: ShoppingCartItem<Tshirt>) => {
-        if (item) {
-          const totalForItemAndAllSizes = Object
-            .keys(item.cartDetails)
-            .reduce((cartTotal: number, size) => {
-              const totalForItemAndSize = item.item.price * item.cartDetails[size];
-              cartTotal += totalForItemAndSize;
-              return cartTotal;
-            }, 0);
-          
-          total += totalForItemAndAllSizes;
-        }
-        return total;
-      }, 0);
+    let totalCost = 0;
+    if (props.shoppingCart.tshirt) {
+      const tshirts: number = Object
+        .keys(props.shoppingCart.tshirt)
+        .map((tshirtId) => props.shoppingCart.tshirt![tshirtId])
+        .reduce((total: number, item?: ShoppingCartItem<Tshirt>) => {
+          if (item) {
+            const totalForItemAndAllSizes = Object
+              .keys(item.cartDetails)
+              .reduce((cartTotal: number, size) => {
+                const price = item.item.priceBySize[size] ?? item.item.price;
+                const totalForItemAndSize = price * item.cartDetails[size];
+                cartTotal += totalForItemAndSize;
+                return cartTotal;
+              }, 0);
+            
+            total += totalForItemAndAllSizes;
+          }
+          return total;
+        }, 0);
 
-    // sum all different totals
-    return `${tshirts} USD`;
+        totalCost += tshirts;
+    }
+
+    return `${totalCost} USD`;
   }
 
   return (

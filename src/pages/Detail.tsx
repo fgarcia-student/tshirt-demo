@@ -1,11 +1,10 @@
 import React from "react";
-import { PageProps, Link, navigate } from 'gatsby';
+import { PageProps } from 'gatsby';
 import { Tshirt } from '../models/Tshirt';
 import styled from "styled-components";
 import Layout from "../components/layout"
-import { addItemToShoppingCart } from "../components/header";
-import { ItemCategory } from '../enums/ItemCategory';
-
+import { AppEntities } from '../enums/AppEntities';
+import { AppContext, IAppContext } from "../state/store";
 
 type LocationState = {
   tshirt: Tshirt;
@@ -16,14 +15,19 @@ type StyledProps = { className?: string }
 type Props = StyledProps & PageProps<{}, {}, LocationState>;
 
 const TshirtDetailPage: React.FC<Props> = (props) => {
-  const [, refresh] = React.useState(false);
-
-  const tshirt = props.location.state?.tshirt ?? new Tshirt({});
+  const appContext = React.useContext(AppContext);
+  const tshirt = React.useMemo(() => {
+    // if no tshirt could be located in location state
+    if (!(props.location.state?.tshirt)) {
+      
+    }
+    return props.location.state?.tshirt ?? new Tshirt({});
+  }, [appContext.state.items.tshirt]);
   
-  const [activeImage, setActiveImage] = React.useState(tshirt.img_main ?? "");
+  const [activeImage, setActiveImage] = React.useState(tshirt.imgMain ?? "");
   const handleSetActiveImage = React.useCallback((url: string) => () => { setActiveImage(url); }, []);
   
-  const [selectedSize, setSelectedSize] = React.useState(tshirt.quantity === 0 ? "SOLD_OUT" : tshirt.sizes[0] ?? "");
+  const [selectedSize, setSelectedSize] = React.useState(tshirt.sizes ? tshirt.sizes[0] ?? "" : "");
   const handleSetSelectedSize = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSize(e.currentTarget.value), []);
 
   const [backgroundPosition, setBackgroundPosition] = React.useState("0% 0%");
@@ -39,11 +43,15 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
   const handleStopHovering = React.useCallback(() => setIsHovering(false), []);
 
   const handleAddItemToCart = React.useCallback(() => {
-    if (selectedSize !== "SOLD_OUT") {
-      addItemToShoppingCart(ItemCategory.tshirt, tshirt, selectedSize);
-      refresh(t => !t);
+    if (selectedSize) {
+      appContext.addItemToCart?.(AppEntities.tshirt, tshirt, selectedSize);
     }
-  }, [tshirt, selectedSize]);
+  }, [tshirt, selectedSize, appContext.addItemToCart]);
+
+  const price = React.useMemo(() => {
+    const p  = tshirt.priceBySize[selectedSize] ?? tshirt.price;
+    return tshirt.formattedPrice.replace("{price}", `${p}`);
+  }, [selectedSize]);
 
   return (
     <Layout>
@@ -72,9 +80,9 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
             )}
           </div>
           <div style={{ flex: 1, marginTop: "5px" }}>
-            <img className="image_preview" onClick={handleSetActiveImage(tshirt.img_main)} src={tshirt.img_main} width={150} height={75} />
-            {tshirt.img_alt.map((imgUrl) => (
-              <img className="image_preview" onClick={handleSetActiveImage(imgUrl)} src={imgUrl} width={150} height={75} />
+            <img className="image_preview" onClick={handleSetActiveImage(tshirt.imgMain)} src={tshirt.imgMain} width={150} height={75} />
+            {tshirt.imgAlt.map((imgUrl) => (
+              <img key={imgUrl} className="image_preview" onClick={handleSetActiveImage(imgUrl)} src={imgUrl} width={150} height={75} />
             ))}
           </div>
         </div>
@@ -87,23 +95,15 @@ const TshirtDetailPage: React.FC<Props> = (props) => {
           }}
         >
           <div style={{ fontSize: "48px", paddingBottom: "20px", lineHeight: "60px" }}>{tshirt.name}</div>
-          <div style={{ fontSize: "32px", paddingBottom: "20px"  }}>{tshirt.formatted_price}</div>
+          <div style={{ fontSize: "32px", paddingBottom: "20px"  }}>{price}</div>
           <div style={{ fontSize: "18px", paddingBottom: "20px" }}>{tshirt.description}</div>
           <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            {tshirt.quantity === 0 && (
-              <div className={"sold-out-label"}>
-                SOLD OUT
-              </div>
-            )}
             <select className="size_selection_dropdown" onChange={handleSetSelectedSize}>
-              {tshirt.quantity === 0 && (
-                <option key={"SOLD OUT"} value={"SOLD OUT"}>SOLD OUT</option>
-              )}
-              {tshirt.quantity !== 0 && tshirt.sizes.map((size) => (
+              {tshirt.sizes.length !== 0 && tshirt.sizes.map((size) => (
                 <option key={size} value={size}>{size}</option>
               ))}
             </select>
-            <button className={`add_to_cart_button ${tshirt.quantity === 0 ? "disabled" : ""}`} disabled={tshirt.quantity === 0} onClick={handleAddItemToCart}>Add to cart</button>
+            <button className={`add_to_cart_button ${tshirt.sizes.length === 0 ? "disabled" : ""}`} disabled={tshirt.sizes.length === 0} onClick={handleAddItemToCart}>Add to cart</button>
           </div>
           <div 
             className="go_back_button"
@@ -173,16 +173,6 @@ export default styled(TshirtDetailPage)`
     }
   }
 
-  .sold-out-label {
-    color: red;
-    position: absolute;
-    left: 50px;
-    bottom: 50px;
-    font-size: 34px;
-    line-height: 50px;
-    width: 100%;
-  }
-
   .image_preview {
     border: 1px solid black;
     margin-right: 5px;
@@ -214,10 +204,6 @@ export default styled(TshirtDetailPage)`
   
   @media screen and (max-width: 912px) {
     flex-direction: column;
-
-    .sold-out-label {
-      left: 125px;
-    }
 
     .image_preview {
       transition: unset;

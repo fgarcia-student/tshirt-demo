@@ -6,12 +6,14 @@ type Props = {
   imageUrl: string;
   srcSet: string;
   className?: string;
+  onClick?: () => void;
 }
 
 const Logo: React.FC<Props> = (props) => (
   <Link
     className={props.className}
     to="/"
+    onClick={props.onClick}
   >
     <img
       src={props.imageUrl}
